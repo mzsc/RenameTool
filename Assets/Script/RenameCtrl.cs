@@ -8,7 +8,11 @@ public class RenameCtrl : MonoBehaviour {
     public InputField OldNameInput;
     public InputField NewNameInput;
     public InputField FilePathInput;
+    public Button RespondButton;
+    public Text RespondText;
+    public Dropdown NumDropdown;
 
+    private int[] DigitCapacity = { 2, 3, 4 };
     private string OldNameHead;
     private string OldNameFoot;
     private string NewNameHead;
@@ -16,6 +20,7 @@ public class RenameCtrl : MonoBehaviour {
     private string FilePath;
 
     public void OnStartRename() {
+        HaveInHand();
         if (OldNameInput != null) {
             SplitFileName(OldNameInput.text, ref OldNameHead, ref OldNameFoot);
         }
@@ -24,6 +29,9 @@ public class RenameCtrl : MonoBehaviour {
         }
         if (FilePathInput != null) {
             FilePath = FilePathInput.text;
+            if ((FilePath.Length > 0) && (FilePath[FilePath.Length - 1] != '\\')) {
+                FilePath = FilePath + '\\';
+            }
         }
         FileRename();
     }
@@ -46,7 +54,6 @@ public class RenameCtrl : MonoBehaviour {
     private void FileRename() {
         if (Directory.Exists(FilePath)) {
             string[] FileNames = Directory.GetFiles(FilePath);
-            int IndexLength = FileNames.Length.ToString().Length;
             foreach (string FileName in FileNames) {
                 string OldFileName = Path.GetFileName(FileName);
                 if ((OldNameHead != null) && (OldFileName.Contains(OldNameHead))) {
@@ -55,16 +62,22 @@ public class RenameCtrl : MonoBehaviour {
                     if (FileClasss.Length > 1) {
                         FileClass = '.' + FileClasss[FileClasss.Length - 1];
                     }
-                    string Index = SplitIndex(IndexLength, OldNameHead.Length, OldFileName);
+                    string Index = SplitIndex(OldNameHead.Length, OldFileName);
                     string NewFileName = FilePath + NewNameHead + Index + NewNameFoot + FileClass;
                     File.Move(FileName, NewFileName);
                 }
             }
+        } else {
+            TextInit();
+            Fail();
+            return;
         }
+        TextInit();
+        Finish();
         Debug.Log("--------Rename End!");
     }
 
-    private string SplitIndex(int IndexLength, int StartIndex, string FileName) {
+    private string SplitIndex(int StartIndex, string FileName) {
         int i = StartIndex;
         string Index = null;
         while (((FileName[i] - '0') >= 0) && ((FileName[i] - '0') <= 9)) {
@@ -73,10 +86,36 @@ public class RenameCtrl : MonoBehaviour {
             }
             i++;
         }
-        while (Index.Length < IndexLength) {
+        while (Index.Length < DigitCapacity[NumDropdown.value]) {
             Index = '0' + Index;
         }
 
         return Index;
+    }
+
+    private void TextInit() {
+        FilePathInput.text = "";
+        OldNameInput.text = "";
+        NewNameInput.text = "";
+    }
+
+    public void RespondButtonHide() {
+        RespondButton.gameObject.SetActive(false);
+    }
+
+    private void HaveInHand() {
+        RespondButton.gameObject.SetActive(true);
+        RespondButton.enabled = false;
+        RespondText.text = "进行中 . . .";
+    }
+
+    private void Finish() {
+        RespondButton.enabled = true;
+        RespondText.text = "完成 ! ! !";
+    }
+
+    private void Fail() {
+        RespondButton.enabled = true;
+        RespondText.text = "失败 ! ! !";
     }
 }
